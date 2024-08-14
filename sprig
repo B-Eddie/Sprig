@@ -98,10 +98,8 @@ p..
 .b.
 ..g`,
   map`
-p.wg
-.bw.
-..w.
-..w.`,
+p.bg
+....`,
   map`
 p...
 ...b
@@ -113,7 +111,7 @@ p...
 ...`,
   map`
 p.w.
-.bwg
+.b.g
 ....
 ..bg`
 ];
@@ -126,24 +124,63 @@ setSolids([ player, box, wall ]); // other sprites cannot go inside of these spr
 
 // allow certain sprites to push certain other sprites
 setPushables({
-  [player]: []
+  [player]: ['b'],
+  ['b']: ['b']
 });
+
+const melody = tune`
+500: F4~500 + G4~500,
+500: G4~500,
+500: A4~500,
+500: A4~500 + B4~500,
+500: C5~500,
+500: D5~500,
+500: D5~500 + E5~500,
+500: F5~500 + G5~500,
+500: G5~500 + A5~500,
+500: A5~500,
+500: A5~500,
+500: G5~500,
+500: G5~500,
+500: F5~500 + E5~500,
+500: D5~500,
+500: C5~500,
+500: B4~500 + A4~500,
+500: G4~500 + F4~500,
+500: F4~500 + E4~500,
+500: E4~500,
+500: F4~500,
+500: F4~500 + G4~500,
+500: A4~500,
+500: B4~500,
+500: C5~500 + D5~500,
+500: E5~500,
+500: F5~500,
+500: G5~500,
+500: A5~500,
+500: B5~500 + A5~500 + G5~500,
+500: F5~500 + E5~500,
+500: D5~500 + C5~500 + B4~500`
 
 // inputs for player movement control
 onInput("w", () => {
   getFirst(player).y -= 1; // positive y is downwards
+  playTune(melody, 1)
 });
 
 onInput("a", () => {
-  getFirst(player).x += 1;
+  getFirst(player).x -= 1;
+  playTune(melody, 1)
 });
 
 onInput("s", () => {
   getFirst(player).y += 1; // positive y is downwards
+  playTune(melody, 1)
 });
 
 onInput("d", () => {
   getFirst(player).x += 1;
+  playTune(melody, 1)
 });
 // input to reset level
 onInput("j", () => {
