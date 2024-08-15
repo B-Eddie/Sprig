@@ -11,10 +11,15 @@ https://sprig.hackclub.com/gallery/getting_started
 const player = "p"
 const obstacle_block = 'b'
 const wall = 'w'
+const speed_boost = 's'
 
 let game = true
-var death_blocks = []
 let level_difficulty = 0
+let game_start = true
+let timeout = 1000
+var death_blocks = []
+var powerup_speed = []
+var immunity = false
 
 for (let key in death_blocks) {
     addText(key, {
@@ -48,12 +53,12 @@ setLegend(
 ................
 ................
 ................
-................
-.....3C3C3C.....
-.....3C3C3C.....
-.....3C3C3C.....
-.....3C3C3C.....
-.....3C3C3C.....
+.....933339.....
+.....393393.....
+.....339933.....
+.....339933.....
+.....393393.....
+.....933339.....
 ................
 ................
 ................
@@ -75,7 +80,24 @@ setLegend(
 0000000000000000
 0000000000000000
 0000000000000000
-0000000000000000`]
+0000000000000000`],
+  [ speed_boost, bitmap`
+8888888888888888
+8888888668888888
+8888886666888888
+8888866666688888
+8888866666688888
+8666666666666668
+8666666666666668
+8666666666666668
+8866666666666688
+8886666666666888
+8866666666666688
+8666666666666668
+8666688888866668
+8668888888888668
+8688888888888868
+8888888888888888`]
 )
 
 setSolids([
@@ -91,7 +113,7 @@ wwwwwww
 .......
 .......
 .......
-.......`
+wwwwwww`
 ]
 
 setMap(levels[level])
@@ -111,6 +133,13 @@ function pushObstacleSpritesUp() {
     }
   });
 
+  getAll(speed_boost).forEach(sprite => {
+    sprite.y -= 1;
+    if (sprite.y === 0) {
+      sprite.remove()
+    }
+  });
+  
   for (let i = 0; i < death_blocks.length; i++) {
     let [x, y] = death_blocks[i];
     death_blocks[i] = [x, y -1];
@@ -144,103 +173,187 @@ function gameover() {
 
 }
 
-function checkDeath() {
+function speedBoost() {
+  timeout = 200
+  immunity = true
+  
+  addText("Immunity for 10 seconds", {
+        x: 6,
+        y: 5,
+        color: color`1`
+    });
+}
+
+function checkCollision() {
   let playerx = getFirst(player).x
   let playery = getFirst(player).y
 
-  let r = 0
   for (let i in death_blocks) {
     blockx = death_blocks[i][0]
     blocky = death_blocks[i][1]
-    if (blockx === playerx && blocky === playery) return gameover()
-    addText(playerx.toString(), {
-      x:5,
-      y:3,
-      color: color`0`
-    })
-    addText(playery.toString(), {
-      x:5,
-      y:4,
-      color: color`0`
-    })
-    addText(blockx.toString(), {
-      x:5,
-      y:5,
-      color: color`0`
-    })
-    addText(blocky.toString(), {
-      x:5,
-      y:6,
-      color: color`0`
-    })
-    r++
+    if (!immunity) {
+      if (blockx === playerx && blocky === playery) return gameover()
+    }
+  }
+  
+  for (let i in powerup_speed) {
+    blockx = powerup_speed[i][0]
+    blocky = powerup_speed[i][1]
+    if (blockx === playerx && blocky === playery) return speedBoost()
   }
   return false  
 }
 
 function tick() {
   if (game) {
+    checkLevel()
     let random_num = Math.floor(Math.random() * 7)
+    let random_speed_boost = Math.floor(Math.random() * 20)
     let id = dictCount(death_blocks)
   
     let xy = [random_num, 6]
-    
-    addSprite(random_num, 6, obstacle_block)
+
+    if (random_speed_boost !== 4) {
+      addSprite(random_num, 6, obstacle_block)
+      death_blocks[id] = xy;
+    } else {
+      addSprite(random_num, 6, speed_boost)
+      powerup_speed[id] = xy;
+    }
       
-    death_blocks[id] = xy;
-    // for (let key in death_blocks) {
-    //   addText(key.toString(), {
-    //       x: 2,
-    //       y: 4,
-    //       color: color`0`
-    //   });
-    // }
   
     // scootching all blocks upwards
     pushObstacleSpritesUp();
     
-    checkDeath()
+    checkCollision()
     
     let h = true
-    setTimeout(tick, 1000);
-    
-    
-    // game = false
+    setTimeout(tick, timeout);
+  }
+}
+
+let one = true
+let two = true
+let three = true
+let four = true
+function checkLevel() {
+  // 1: 20
+  // 2: 40
+  // 3: 60
+  // 4: 80
+  // 5: 100
+  
+  let game_blocks = dictCount(death_blocks)
+  if (game_blocks <= 20) {
+    if (one) {
+      level_difficulty = 1  
+      timeout = 1000
+      addText("Level 1", {
+        x:6,
+        y:6,
+        color: color`0`
+      })
+      one = false
+    } else {
+      clearText()
+    }
+  } else if (game_blocks > 20 && game_blocks <= 40) {
+    if (two) {
+      level_difficulty = 2
+      timeout = 800
+      two = false
+      addText("Level 2", {
+        x:6,
+        y:6,
+        color: color`0`
+      })
+    } else {
+      clearText()
+    }
+  } else if (game_blocks > 40 && game_blocks <= 60) {
+    if (three) {
+      level_difficulty = 3
+      timeout = 500
+      addText("Level 3", {
+        x:6,
+        y:6,
+        color: color`0`
+      })
+      three = false
+    } else {
+      clearText()
+    }
+  } else if (game_blocks > 60 && game_blocks <= 100) {
+    if (four) {
+      level_difficulty = 4
+      timeout = 300
+      addText("Level 4", {
+        x:6,
+        y:6,
+        color: color`0`
+      })
+      four = false
+    } else {
+      clearText()
+    }
+  } else if (game_blocks > 100 && game_blocks <= 140) {
+    if (four) {
+      level_difficulty = 4
+      timeout = 300
+      addText("Level 5", {
+        x:6,
+        y:6,
+        color: color`0`
+      })
+      four = false
+    } else {
+      clearText()
+    }
   }
 }
 
 onInput("a", () => {
   if (game) {
     getFirst(player).x -= 1
-    checkDeath()
+    checkCollision()
   }
 })
 
 onInput("d", () => {
   if (game) {
     getFirst(player).x += 1
-    checkDeath()
+    checkCollision()
   }
 })
 
 onInput("w", () => {
   if (game) {
     getFirst(player).y -= 1
-    checkDeath()
+    checkCollision()
   }
 })
 
 onInput("s", () => {
   if (game) {
     getFirst(player).y += 1
-    checkDeath()
+    checkCollision()
   }
 })
 
-let game_start = true
+addText("Bike Mayhem", {
+  x:4,
+  y:4,
+  color: color`0`
+})
+addText("WASD to start", {
+  x:3,
+  y:6,
+  color: color`0`
+})
 afterInput(() => {
-    if (game_start) {
+  if (game_start) {
+      clearText()
       tick()
       game_start = false
-    }
+    } 
 })
