@@ -10,6 +10,9 @@ https://sprig.hackclub.com/gallery/getting_started
 
 const player = "p"
 const obstacle_block = 'b'
+let game = true
+var death_blocks = {}
+let level_difficulty = 0
 
 setLegend(
   [ player, bitmap`
@@ -54,16 +57,6 @@ let level = 0
 const levels = [
   map`
 ....p..
-..bb...
-....b..
-..b....
-....b..
-.......
-.......
-.......
-.......
-.......
-.......
 .......
 .......
 .......
@@ -79,13 +72,62 @@ setPushables({
 
 
 onInput("a", () => {
-  getFirst(player).x -= 1;
-});
+  getFirst(player).x -= 1
+})
 
 onInput("d", () => {
-  getFirst(player).x += 1;
-});
+  getFirst(player).x += 1
+})
+
+function gameover() {
+  game = false
+  addText("u ded", {
+        x: 1,
+        y: 4,
+        color: color`2`
+    });
+}
+
+function pushObstacleSpritesUp() {
+  getAll(obstacle_block).forEach(sprite => {
+    sprite.y -= 1;
+    if (sprite.y === 0) {
+      sprite.remove()
+    }
+  });
+}
+
+function tick() {
+  let random_num = Math.floor(Math.random() * 7)
+  let id = death_blocks.length
+  let xy = [random_num, 5]
+  
+  addSprite(random_num, 5, obstacle_block)
+    
+  // death_blocks.push({id: xy})
+  death_blocks[id] = xy;
+  for (let key in death_blocks) {
+    addText(key, {
+        x: 2,
+        y: 4,
+        color: color`0`
+    });
+}
+
+  // scootching all blocks upwards, i dont thikn it worky
+  pushObstacleSpritesUp();
+
+  let h = true
+  setTimeout(tick, 5000);
+  
+  
+  // game = false
+}
+
+const endInvincibility = () => {h = false}
 
 afterInput(() => {
-  
+    if (game) {
+      tick()
+    }
 })
