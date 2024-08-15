@@ -10,9 +10,19 @@ https://sprig.hackclub.com/gallery/getting_started
 
 const player = "p"
 const obstacle_block = 'b'
+const wall = 'w'
+
 let game = true
-var death_blocks = {}
+var death_blocks = []
 let level_difficulty = 0
+
+for (let key in death_blocks) {
+    addText(key, {
+        x: 2,
+        y: 4,
+        color: color`0`
+    });
+  }
 
 setLegend(
   [ player, bitmap`
@@ -48,15 +58,35 @@ setLegend(
 ................
 ................
 ................
-................`]
+................`],
+  [ wall, bitmap`
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000
+0000000000000000`]
 )
 
-setSolids([])
+setSolids([
+  player, wall
+])
 
 let level = 0
 const levels = [
   map`
-....p..
+wwwwwww
+...p...
 .......
 .......
 .......
@@ -71,22 +101,7 @@ setPushables({
 })
 
 
-onInput("a", () => {
-  getFirst(player).x -= 1
-})
 
-onInput("d", () => {
-  getFirst(player).x += 1
-})
-
-function gameover() {
-  game = false
-  addText("u ded", {
-        x: 1,
-        y: 4,
-        color: color`2`
-    });
-}
 
 function pushObstacleSpritesUp() {
   getAll(obstacle_block).forEach(sprite => {
@@ -95,39 +110,137 @@ function pushObstacleSpritesUp() {
       sprite.remove()
     }
   });
+
+  for (let i = 0; i < death_blocks.length; i++) {
+    let [x, y] = death_blocks[i];
+    death_blocks[i] = [x, y -1];
+  }
+
+}
+
+function dictCount(dict) {
+  let h = 0;
+  for (let i in dict) {
+    h++
+  }
+  return h
+}
+
+function gameover() {
+  game = false
+  clearText()
+
+  let score = dictCount(death_blocks)
+  addText("u ded", {
+        x: 7,
+        y: 4,
+        color: color`1`
+    });
+  addText("score:" + score, {
+        x: 6,
+        y: 5,
+        color: color`1`
+    });
+
+}
+
+function checkDeath() {
+  let playerx = getFirst(player).x
+  let playery = getFirst(player).y
+
+  let r = 0
+  for (let i in death_blocks) {
+    blockx = death_blocks[i][0]
+    blocky = death_blocks[i][1]
+    if (blockx === playerx && blocky === playery) return gameover()
+    addText(playerx.toString(), {
+      x:5,
+      y:3,
+      color: color`0`
+    })
+    addText(playery.toString(), {
+      x:5,
+      y:4,
+      color: color`0`
+    })
+    addText(blockx.toString(), {
+      x:5,
+      y:5,
+      color: color`0`
+    })
+    addText(blocky.toString(), {
+      x:5,
+      y:6,
+      color: color`0`
+    })
+    r++
+  }
+  return false  
 }
 
 function tick() {
-  let random_num = Math.floor(Math.random() * 7)
-  let id = death_blocks.length
-  let xy = [random_num, 5]
+  if (game) {
+    let random_num = Math.floor(Math.random() * 7)
+    let id = dictCount(death_blocks)
   
-  addSprite(random_num, 5, obstacle_block)
+    let xy = [random_num, 6]
     
-  // death_blocks.push({id: xy})
-  death_blocks[id] = xy;
-  for (let key in death_blocks) {
-    addText(key, {
-        x: 2,
-        y: 4,
-        color: color`0`
-    });
+    addSprite(random_num, 6, obstacle_block)
+      
+    death_blocks[id] = xy;
+    // for (let key in death_blocks) {
+    //   addText(key.toString(), {
+    //       x: 2,
+    //       y: 4,
+    //       color: color`0`
+    //   });
+    // }
+  
+    // scootching all blocks upwards
+    pushObstacleSpritesUp();
+    
+    checkDeath()
+    
+    let h = true
+    setTimeout(tick, 1000);
+    
+    
+    // game = false
+  }
 }
 
-  // scootching all blocks upwards, i dont thikn it worky
-  pushObstacleSpritesUp();
+onInput("a", () => {
+  if (game) {
+    getFirst(player).x -= 1
+    checkDeath()
+  }
+})
 
-  let h = true
-  setTimeout(tick, 5000);
-  
-  
-  // game = false
-}
+onInput("d", () => {
+  if (game) {
+    getFirst(player).x += 1
+    checkDeath()
+  }
+})
 
-const endInvincibility = () => {h = false}
+onInput("w", () => {
+  if (game) {
+    getFirst(player).y -= 1
+    checkDeath()
+  }
+})
 
+onInput("s", () => {
+  if (game) {
+    getFirst(player).y += 1
+    checkDeath()
+  }
+})
+
+let game_start = true
 afterInput(() => {
-    if (game) {
+    if (game_start) {
       tick()
+      game_start = false
     }
 })
