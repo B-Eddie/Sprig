@@ -9,6 +9,7 @@ https://sprig.hackclub.com/gallery/getting_started
 */
 
 const player = "p"
+const player_speed = "s"
 const obstacle_block = 'b'
 const wall = 'w'
 const speed_boost = 's'
@@ -47,6 +48,23 @@ setLegend(
 .......000......
 ................
 ................` ],
+  [ player_speed, bitmap`
+................
+................
+................
+................
+................
+................
+................
+......6666......
+......666.......
+.....666........
+....6.6.........
+...6..6.........
+..6..6..........
+..6.6...........
+.666............
+................`],
   [ obstacle_block, bitmap`
 ................
 ................
@@ -173,8 +191,14 @@ function gameover() {
 
 }
 
+function finishSpeedBoost() {
+  timeout += 200
+  immunity = false
+
+}
+
 function speedBoost() {
-  timeout = 200
+  timeout -= 200
   immunity = true
   
   addText("Immunity for 10 seconds", {
@@ -182,11 +206,25 @@ function speedBoost() {
         y: 5,
         color: color`1`
     });
+
+  getAll(player).forEach(sprite => {
+    sprite.type = "s"
+  });
+  
+  setTimeout(finishSpeedBoost, 10000)
 }
 
 function checkCollision() {
-  let playerx = getFirst(player).x
-  let playery = getFirst(player).y
+  let playerx;
+  let playery;
+  if (getFirst(player)) {
+    
+    playerx = getFirst(player).x
+    playery = getFirst(player).y
+  } else {
+    playerx = getFirst(player_speed).x
+    playery = getFirst(player_speed).y
+  }
 
   for (let i in death_blocks) {
     blockx = death_blocks[i][0]
@@ -196,11 +234,13 @@ function checkCollision() {
     }
   }
   
-  for (let i in powerup_speed) {
-    blockx = powerup_speed[i][0]
-    blocky = powerup_speed[i][1]
-    if (blockx === playerx && blocky === playery) return speedBoost()
-  }
+  getAll(speed_boost).forEach(sprite => {
+    if (sprite.x === playerx && sprite.y === playery) {
+      sprite.remove()
+      return speedBoost()
+    }
+  });
+  
   return false  
 }
 
@@ -260,7 +300,8 @@ function checkLevel() {
   } else if (game_blocks > 20 && game_blocks <= 40) {
     if (two) {
       level_difficulty = 2
-      timeout = 800
+      // timeout = 800
+      timeout -= 300
       two = false
       addText("Level 2", {
         x:6,
@@ -273,7 +314,8 @@ function checkLevel() {
   } else if (game_blocks > 40 && game_blocks <= 60) {
     if (three) {
       level_difficulty = 3
-      timeout = 500
+      // timeout = 500
+      timeout -= 200
       addText("Level 3", {
         x:6,
         y:6,
@@ -286,7 +328,8 @@ function checkLevel() {
   } else if (game_blocks > 60 && game_blocks <= 100) {
     if (four) {
       level_difficulty = 4
-      timeout = 300
+      // timeout = 300
+      timeout -= 200
       addText("Level 4", {
         x:6,
         y:6,
@@ -312,33 +355,63 @@ function checkLevel() {
   }
 }
 
-onInput("a", () => {
-  if (game) {
-    getFirst(player).x -= 1
-    checkCollision()
-  }
-})
-
-onInput("d", () => {
-  if (game) {
-    getFirst(player).x += 1
-    checkCollision()
-  }
-})
-
-onInput("w", () => {
-  if (game) {
-    getFirst(player).y -= 1
-    checkCollision()
-  }
-})
-
-onInput("s", () => {
-  if (game) {
-    getFirst(player).y += 1
-    checkCollision()
-  }
-})
+if (getFirst(player)) {
+  onInput("a", () => {
+    if (game) {
+      getFirst(player).x -= 1
+      checkCollision()
+    }
+  })
+  
+  onInput("d", () => {
+    if (game) {
+      getFirst(player).x += 1
+      checkCollision()
+    }
+  })
+  
+  onInput("w", () => {
+    if (game) {
+      getFirst(player).y -= 1
+      checkCollision()
+    }
+  })
+  
+  onInput("s", () => {
+    if (game) {
+      getFirst(player).y += 1
+      checkCollision()
+    }
+  })
+} else {
+  onInput("a", () => {
+    if (game) {
+      getFirst(player_speed).x -= 1
+      checkCollision()
+    }
+  })
+  
+  onInput("d", () => {
+    if (game) {
+      getFirst(player_speed).x += 1
+      checkCollision()
+    }
+  })
+  
+  onInput("w", () => {
+    if (game) {
+      getFirst(player_speed).y -= 1
+      checkCollision()
+    }
+  })
+  
+  onInput("s", () => {
+    if (game) {
+      getFirst(player_speed).y += 1
+      checkCollision()
+    }
+  })
+}
 
 addText("Bike Mayhem", {
   x:4,
