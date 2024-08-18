@@ -13,6 +13,8 @@ const obstacle_block = 'b'
 const wall = 'w'
 const speed_boost = 's'
 const player_speed = 'e'
+const barrel = "a"
+const slowdown = "d"
 
 let game = true
 let level_difficulty = 0
@@ -20,7 +22,10 @@ let game_start = true
 let timeout = 1000
 var death_blocks = []
 var powerup_speed = []
+var barrel_block = []
 var immunity = false
+var countdown = 10
+var speedboost = false
 
 
 for (let key in death_blocks) {
@@ -64,6 +69,40 @@ setLegend(
 .......000......
 .......000......
 .......000......
+................
+................` ],
+  [ barrel, bitmap`
+................
+................
+................
+................
+................
+.....CFCCFC.....
+.....CFCCFC.....
+.....CFCCFC.....
+.....CFCCFC.....
+.....CFCCFC.....
+.....CFCCFC.....
+................
+................
+................
+................
+................` ],
+  [ slowdown, bitmap`
+................
+................
+................
+................
+................
+.....88HH88.....
+.....8HHHH8.....
+.....HHHHHH.....
+.....88HH88.....
+.....88HH88.....
+.....88HH88.....
+................
+................
+................
 ................
 ................` ],
   [ obstacle_block, bitmap`
@@ -120,7 +159,7 @@ setLegend(
 )
 
 setSolids([
-  player, wall
+  player, wall, barrel
 ])
 
 let level = 0
@@ -138,7 +177,7 @@ wwwwwww`
 setMap(levels[level])
 
 setPushables({
-  [ player ]: []
+  [ player ]: [barrel]
 })
 
 function pushObstacleSpritesUp() {
@@ -155,10 +194,20 @@ function pushObstacleSpritesUp() {
       sprite.remove()
     }
   });
+
+  checkCollision()
+  getAll(barrel).forEach(sprite => {
+    sprite.y -= 1;
+    if (sprite.y === 1) {
+      sprite.remove()
+    }
+  });
   
   for (let i = 0; i < death_blocks.length; i++) {
-    let [x, y] = death_blocks[i];
-    death_blocks[i] = [x, y -1];
+    if (death_blocks[i]) {
+      let [x, y] = death_blocks[i];
+      death_blocks[i] = [x, y -1];
+    }
   }
 
 }
@@ -189,19 +238,17 @@ function gameover() {
 
 }
 
-function finishSpeedBoost() {
-  timeout += 200
-  immunity = false
-  getAll(player_speed).forEach(sprite => {
-    sprite.remove()
-  })
-}
 
-var countdown = 10
 function speedBoostCountdown() {
   if (countdown > 0) { 
-    addText("Immune for " + countdown + " seconds", {
-          x: 3,
+    speedboost = true
+    addText("Immune for", {
+          x: 5,
+          y: 4,
+          color: color`1`
+      });
+    addText(countdown + " seconds", {
+          x: 6,
           y: 5,
           color: color`1`
       });
@@ -209,17 +256,32 @@ function speedBoostCountdown() {
     setTimeout(speedBoostCountdown, 1000)
   } else {
     countdown = 10
-    finishSpeedBoost()
+    clearText()
+    speedboost = false
+
+    // ending speed boost
+    timeout += 200
+    immunity = false
+    getAll(player_speed).forEach(sprite => {
+      sprite.remove()
+    })
   }
 }
 
 function speedBoost() {
-  timeout -= 200
-  immunity = true
-  
-  addSprite(getFirst(player).x, getFirst(player).y, player_speed)
-  speedBoostCountdown()
+  if (!speedboost) {
+    timeout -= 200
+    immunity = true
+    
+    addSprite(getFirst(player).x, getFirst(player).y, player_speed)
+    speedBoostCountdown()
+  }
 }
+
+function slowdown_all() {
+  timeout += 200
+}
+  
 
 function checkCollision() {
   playerx = getFirst(player).x
@@ -231,12 +293,26 @@ function checkCollision() {
     if (!immunity) {
       if (blockx === playerx && blocky === playery) return gameover()
     }
+    getAll(barrel).forEach(sprite => {
+      if (sprite.x === blockx && sprite.y === blocky) {
+        // sprite.remove()
+        delete death_blocks[i]
+        clearTile(sprite.x, sprite.y)
+      }
+    });
   }
   
   getAll(speed_boost).forEach(sprite => {
     if (sprite.x === playerx && sprite.y === playery) {
       sprite.remove()
       return speedBoost()
+    }
+  });
+  
+  getAll(slowdown).forEach(sprite => {
+    if (sprite.x === playerx && sprite.y === playery) {
+      return slowdown_all()
+      sprite.remove()
     }
   });
   
@@ -247,20 +323,53 @@ function tick() {
   if (game) {
     checkLevel()
     let random_num = Math.floor(Math.random() * 7)
-    let random_speed_boost = Math.floor(Math.random() * 20)
+    let random_speed_boost = Math.floor(Math.random() * 15)
+    let random_barrel = Math.floor(Math.random() * 10)
+    let random_slowdown = Math.floor(Math.random() * 20)
+    random_boost = Math.floor(Math.random() * 20)
     let id = dictCount(death_blocks)
   
-    let xy = [random_num, 6]
-    getAll(death_blocks).forEach(sprite => {
-      sprite.type = "s"
-    })
-    if (random_speed_boost !== 4) {
-      addSprite(random_num, 6, obstacle_block)
-      death_blocks[id] = xy;
-    } else {
-      addSprite(random_num, 6, speed_boost)
-      powerup_speed[id] = xy;
+    // let xy = [random_num, 6]
+    // getAll(death_blocks).forEach(sprite => {
+    //   sprite.type = "s"
+    // })
+
+    var items = Array["speed", "slowdown", "barrel"] //obstacle
+    var item = items[Math.floor(Math.random()*items.length)];
+
+    switch(item) {
+        
+      case "speed":
+        addSprite(random_num, 6, speed_boost)
+        powerup_speed[id] = xy;
+        break
+      case "slowdown":
+        addSprite(random_num, 6, slowdown)
+        barrel_block[id] = xy;
+        break
+      case "barrel":
+        addSprite(random_num, 6, barrel)
+        barrel_block[id] = xy;
+        break
+      default:
+        addSprite(random_num, 6, obstacle_block)
+        death_blocks[id] = xy;
+        break
+  
     }
+    // if (random_boost !== 1 || speedboost) {
+    //   addSprite(random_num, 6, obstacle_block)
+    //   death_blocks[id] = xy;
+    // } else if (random_boost == 3 || random_boost == 2) {
+    //   addSprite(random_num, 6, barrel)
+    //   barrel_block[id] = xy;
+    // } else if (random_boost == 4 || random_boost == 5 || random_boost == 6) {
+    //   addSprite(random_num, 6, slowdown)
+    //   barrel_block[id] = xy;
+    // } else if (random_boost == 7) {
+    //   addSprite(random_num, 6, speed_boost)
+    //   powerup_speed[id] = xy;
+    // }
       
   
     // scootching all blocks upwards
@@ -272,6 +381,7 @@ function tick() {
     setTimeout(tick, timeout);
   }
 }
+
 
 let one = true
 let two = true
@@ -340,9 +450,9 @@ function checkLevel() {
     } else {
       clearText()
     }
-  } else if (game_blocks > 100 && game_blocks <= 140) {
+  } else if (game_blocks > 100) {
     if (four) {
-      level_difficulty = 4
+      level_difficulty = 5
       timeout -= 100
       addText("Level 5", {
         x:6,
