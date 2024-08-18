@@ -9,10 +9,10 @@ https://sprig.hackclub.com/gallery/getting_started
 */
 
 const player = "p"
-const player_speed = "s"
 const obstacle_block = 'b'
 const wall = 'w'
 const speed_boost = 's'
+const player_speed = 'e'
 
 let game = true
 let level_difficulty = 0
@@ -21,6 +21,7 @@ let timeout = 1000
 var death_blocks = []
 var powerup_speed = []
 var immunity = false
+
 
 for (let key in death_blocks) {
     addText(key, {
@@ -31,6 +32,23 @@ for (let key in death_blocks) {
   }
 
 setLegend(
+  [ player_speed, bitmap`
+................
+................
+.......666......
+.......666......
+.......666......
+........L.......
+.......666......
+......36663.....
+......36663.....
+......3CLC3.....
+......6.L.6.....
+.......666......
+.......666......
+.......666......
+................
+................` ],
   [ player, bitmap`
 ................
 ................
@@ -48,23 +66,6 @@ setLegend(
 .......000......
 ................
 ................` ],
-  [ player_speed, bitmap`
-................
-................
-................
-................
-................
-................
-................
-......6666......
-......666.......
-.....666........
-....6.6.........
-...6..6.........
-..6..6..........
-..6.6...........
-.666............
-................`],
   [ obstacle_block, bitmap`
 ................
 ................
@@ -140,9 +141,6 @@ setPushables({
   [ player ]: []
 })
 
-
-
-
 function pushObstacleSpritesUp() {
   getAll(obstacle_block).forEach(sprite => {
     sprite.y -= 1;
@@ -194,37 +192,38 @@ function gameover() {
 function finishSpeedBoost() {
   timeout += 200
   immunity = false
+  getAll(player_speed).forEach(sprite => {
+    sprite.remove()
+  })
+}
 
+var countdown = 10
+function speedBoostCountdown() {
+  if (countdown > 0) { 
+    addText("Immune for " + countdown + " seconds", {
+          x: 3,
+          y: 5,
+          color: color`1`
+      });
+    countdown--
+    setTimeout(speedBoostCountdown, 1000)
+  } else {
+    countdown = 10
+    finishSpeedBoost()
+  }
 }
 
 function speedBoost() {
   timeout -= 200
   immunity = true
   
-  addText("Immunity for 10 seconds", {
-        x: 6,
-        y: 5,
-        color: color`1`
-    });
-
-  getAll(player).forEach(sprite => {
-    sprite.type = "s"
-  });
-  
-  setTimeout(finishSpeedBoost, 10000)
+  addSprite(getFirst(player).x, getFirst(player).y, player_speed)
+  speedBoostCountdown()
 }
 
 function checkCollision() {
-  let playerx;
-  let playery;
-  if (getFirst(player)) {
-    
-    playerx = getFirst(player).x
-    playery = getFirst(player).y
-  } else {
-    playerx = getFirst(player_speed).x
-    playery = getFirst(player_speed).y
-  }
+  playerx = getFirst(player).x
+  playery = getFirst(player).y
 
   for (let i in death_blocks) {
     blockx = death_blocks[i][0]
@@ -252,7 +251,9 @@ function tick() {
     let id = dictCount(death_blocks)
   
     let xy = [random_num, 6]
-
+    getAll(death_blocks).forEach(sprite => {
+      sprite.type = "s"
+    })
     if (random_speed_boost !== 4) {
       addSprite(random_num, 6, obstacle_block)
       death_blocks[id] = xy;
@@ -342,7 +343,7 @@ function checkLevel() {
   } else if (game_blocks > 100 && game_blocks <= 140) {
     if (four) {
       level_difficulty = 4
-      timeout = 300
+      timeout -= 100
       addText("Level 5", {
         x:6,
         y:6,
@@ -355,63 +356,49 @@ function checkLevel() {
   }
 }
 
-if (getFirst(player)) {
-  onInput("a", () => {
-    if (game) {
-      getFirst(player).x -= 1
-      checkCollision()
+onInput("a", () => {
+  if (game) {
+    getFirst(player).x -= 1
+    checkCollision()
+    if (getAll(player_speed).length > 0) {
+      getFirst(player_speed).x = getFirst(player).x
+      getFirst(player_speed).y = getFirst(player).y
     }
-  })
-  
-  onInput("d", () => {
-    if (game) {
-      getFirst(player).x += 1
-      checkCollision()
+  }
+})
+
+onInput("d", () => {
+  if (game) {
+    getFirst(player).x += 1
+    checkCollision()
+    if (getAll(player_speed).length > 0) {
+      getFirst(player_speed).x = getFirst(player).x
+      getFirst(player_speed).y = getFirst(player).y
     }
-  })
-  
-  onInput("w", () => {
-    if (game) {
-      getFirst(player).y -= 1
-      checkCollision()
+  }
+})
+
+onInput("w", () => {
+  if (game) {
+    getFirst(player).y -= 1
+    checkCollision()
+    if (getAll(player_speed).length > 0) {
+      getFirst(player_speed).x = getFirst(player).x
+      getFirst(player_speed).y = getFirst(player).y
     }
-  })
-  
-  onInput("s", () => {
-    if (game) {
-      getFirst(player).y += 1
-      checkCollision()
+  }
+})
+
+onInput("s", () => {
+  if (game) {  
+    getFirst(player).y += 1
+    checkCollision()
+    if (getAll(player_speed).length > 0) {
+      getFirst(player_speed).x = getFirst(player).x
+      getFirst(player_speed).y = getFirst(player).y
     }
-  })
-} else {
-  onInput("a", () => {
-    if (game) {
-      getFirst(player_speed).x -= 1
-      checkCollision()
-    }
-  })
-  
-  onInput("d", () => {
-    if (game) {
-      getFirst(player_speed).x += 1
-      checkCollision()
-    }
-  })
-  
-  onInput("w", () => {
-    if (game) {
-      getFirst(player_speed).y -= 1
-      checkCollision()
-    }
-  })
-  
-  onInput("s", () => {
-    if (game) {
-      getFirst(player_speed).y += 1
-      checkCollision()
-    }
-  })
-}
+  }
+})
 
 addText("Bike Mayhem", {
   x:4,
@@ -423,6 +410,7 @@ addText("WASD to start", {
   y:6,
   color: color`0`
 })
+
 afterInput(() => {
   if (game_start) {
       clearText()
