@@ -5,6 +5,4 @@ An infinite game with roads
 ![image](https://github.com/user-attachments/assets/020f3f80-e7f0-486b-95d8-6e3fc893997d)
 
 
-[![Video](file:p.mov)
-p.mov
-![vid](p.mov)
+demo vid in p.mov
