@@ -17,7 +17,7 @@ const barrel = "a"
 const slowdown = "d"
 const speedup = "u"
 
-let game = true
+let game = false
 let level_difficulty = 0
 let game_start = true
 let timeout = 1000
@@ -269,7 +269,7 @@ function gameover() {
         y: 5,
         color: color`1`
     });
-
+  setTimeout(menu, 3000)
 }
 
 
@@ -316,22 +316,22 @@ function speedBoost() {
 function slowdown_all() {
   timeout += 200
 
-  addText("Slowdown", {
-        x: 5,
-        y: 4,
-        color: color`1`
-    });
+  // addText("Slowdown", {
+  //       x: 5,
+  //       y: 4,
+  //       color: color`1`
+  //   });
   boost = "slow"
 }
   
 function speedup_all() {
-  timeout -= 200
+  timeout -= 100
 
-  addText("Speedup", {
-        x: 5,
-        y: 4,
-        color: color`1`
-    });
+  // addText("Speedup", {
+  //       x: 5,
+  //       y: 4,
+  //       color: color`1`
+  //   });
   boost = "speed"
 }
   
@@ -367,20 +367,6 @@ function checkCollision() {
       }
     });
   })
-  // for (let i in death_blocks) {
-  //   blockx = death_blocks[i][0]
-  //   blocky = death_blocks[i][1]
-  //   if (!immunity) {
-  //     if (blockx === playerx && blocky === playery) return gameover()
-  //   }
-  //   getAll(barrel).forEach(sprite => {
-  //     if (sprite.x === blockx && sprite.y === blocky) {
-  //       // sprite.remove()
-  //       delete death_blocks[i]
-  //       clearTile(sprite.x, sprite.y)
-  //     }
-  //   });
-  // }
   
   getAll(speed_boost).forEach(sprite => {
     if (sprite.x === playerx && sprite.y === playery) {
@@ -424,11 +410,14 @@ function tick() {
       color: color`1`
     })
     
+    addText(level_difficulty.toString(), {
+      x: 17,
+      y: 14,
+      color: color`1`
+    })
+    
     // adding blocks
     let xy = [random_num, 6]
-    // getAll(death_blocks).forEach(sprite => {
-    //   sprite.type = "s"
-    // })
 
     if (random_boost == 1) {
       const objects_list = ["speed", "slowdown", "speedup", "barrel"]
@@ -448,11 +437,9 @@ function tick() {
           }
         case "slowdown":
           addSprite(random_num, 6, slowdown)
-          // barrel_block[id] = xy;
           break
         case "speedup":
           addSprite(random_num, 6, speedup)
-          // barrel_block[id] = xy;
           break
         case "barrel":
           addSprite(random_num, 6, barrel)
@@ -480,6 +467,7 @@ let one = true
 let two = true
 let three = true
 let four = true
+let levels_collected = []
 function checkLevel() {
   // 1: 20
   // 2: 40
@@ -488,73 +476,12 @@ function checkLevel() {
   // 5: 100
   
   let game_blocks = dictCount(death_blocks)
-  if (game_blocks <= 20) {
-    if (one) {
-      level_difficulty = 1  
-      timeout = 1000
-      addText("Level 1", {
-        x:6,
-        y:6,
-        color: color`0`
-      })
-      one = false
-    } else {
-      clearText()
-    }
-  } else if (game_blocks > 20 && game_blocks <= 40) {
-    if (two) {
-      level_difficulty = 2
-      // timeout = 800
-      timeout -= 300
-      two = false
-      addText("Level 2", {
-        x:6,
-        y:6,
-        color: color`0`
-      })
-    } else {
-      clearText()
-    }
-  } else if (game_blocks > 40 && game_blocks <= 60) {
-    if (three) {
-      level_difficulty = 3
-      // timeout = 500
-      timeout -= 200
-      addText("Level 3", {
-        x:6,
-        y:6,
-        color: color`0`
-      })
-      three = false
-    } else {
-      clearText()
-    }
-  } else if (game_blocks > 60 && game_blocks <= 100) {
-    if (four) {
-      level_difficulty = 4
-      // timeout = 300
-      timeout -= 200
-      addText("Level 4", {
-        x:6,
-        y:6,
-        color: color`0`
-      })
-      four = false
-    } else {
-      clearText()
-    }
-  } else if (game_blocks > 100) {
-    if (four) {
-      level_difficulty = 5
+  let level_divided = Math.floor(game_blocks / 20)
+  level_difficulty = level_divided
+  if (!levels_collected.includes(level_divided)) {
+    levels_collected.push(level_divided)
+    if (timeout > 300) {
       timeout -= 100
-      addText("Level 5", {
-        x:6,
-        y:6,
-        color: color`0`
-      })
-      four = false
-    } else {
-      clearText()
     }
   }
 }
@@ -603,6 +530,7 @@ onInput("s", () => {
   }
 })
 
+
 addText("Bike Mayhem", {
   x:4,
   y:4,
@@ -614,8 +542,33 @@ addText("WASD to start", {
   color: color`0`
 })
 
+function menu() {
+  clearText()
+  boost = ""
+  game_start = true
+  game = false
+  getAll().forEach(sprite => {
+    if (sprite.type !== "p") {
+      sprite.remove()
+    }
+  })
+  // addSprite(3, 1, player)
+  addText("Bike Mayhem", {
+    x:4,
+    y:4,
+    color: color`0`
+  })
+  addText("WASD to start", {
+    x:3,
+    y:6,
+    color: color`0`
+  })
+  setMap(levels[level])
+}
+
 afterInput(() => {
   if (game_start) {
+      game = true  
       clearText()
       tick()
       game_start = false
