@@ -9,3 +9,4 @@ demo vid in p.mov
 <video width="320" height="240" controls>
   <source src="p.mov" type="video/mp4">
 </video>
+https://github.com/B-Eddie/Sprig/blob/main/p.mov
